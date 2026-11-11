@@ -1,0 +1,70 @@
+import org.teavm.gradle.api.OptimizationLevel
+
+plugins {
+  id 'java'
+  id 'com.github.xpenatan.gdx-teavm' version '1.6.2'
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.encoding = 'UTF-8'
+}
+
+dependencies {
+  implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+  implementation "com.github.xpenatan.gdx-teavm:gdx-freetype-web:$gdxTeaVMVersion"
+  implementation project(':core')
+}
+
+gdxTeaVM {
+  assets(rootProject.file('assets'))
+
+  webDefaults {
+    mainClass = 'com.us.TFG.web.WebLauncher'
+    htmlTitle = "Bella's Heart"
+    // index.html propio (PWA + base de datos): está en web/webapp y se copia tras compilar.
+    generateIndexHtml = false
+    // Logo de la pantalla de carga del motor (ya está en assets/).
+    logoPath = 'photos/logo.png'
+    copyLoadingAsset = false
+  }
+
+  // Desarrollo: gradlew web:gdx_teavm_web_js_run  ->  http://localhost:8080
+  js {
+    optimization = OptimizationLevel.NONE
+    obfuscated = false
+    serverPort = 8080
+  }
+
+  // Publicación: gradlew web:gdx_teavm_web_js_release_build  ->  web/build/dist/js/release/webapp
+  js('release') {
+    optimization = OptimizationLevel.BALANCED
+    obfuscated = true
+    serverPort = 8181
+  }
+}
+
+// Copia los ficheros propios de la web (index.html, PWA, sql.js…) junto al juego compilado.
+def buildId = new Date().format("yyyyMMddHHmmss")
+def copyWebapp = { String outDir ->
+  copy {
+    from file('webapp')
+    into outDir
+    filesMatching('sw.js') {
+      filter { String line -> line.replace('__BUILD_ID__', buildId) }
+    }
+  }
+  // Para GitHub Pages: servir los ficheros tal cual, sin procesar con Jekyll.
+  new File(outDir, '.nojekyll').text = ''
+}
+
+tasks.matching { it.name == 'gdx_teavm_web_js_build' }.configureEach {
+  doLast { copyWebapp(layout.buildDirectory.dir('dist/js/webapp').get().asFile.path) }
+}
+tasks.matching { it.name == 'gdx_teavm_web_js_release_build' }.configureEach {
+  doLast { copyWebapp(layout.buildDirectory.dir('dist/js/release/webapp').get().asFile.path) }
+}

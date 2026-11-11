@@ -1,0 +1,10 @@
+pluginManagement {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+    maven { url 'https://teavm.org/maven/repository/' }
+  }
+}
+
+// lwjgl3: versión de escritorio (desarrollo). web: versión navegador / PWA (TeaVM).
+include 'lwjgl3', 'core', 'web'
