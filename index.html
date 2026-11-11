@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Bella's Heart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Novela visual sobre las relaciones de pareja y la violencia de género.">
+  <meta name="theme-color" content="#000000">
+
+  <!-- PWA: instalable en la pantalla de inicio (Android e iPhone) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bella's Heart">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* El juego se dibuja a 1280x768 y se escala aquí para caber en la pantalla. */
+    #canvas {
+      display: block;
+      border: none;
+      width: var(--game-w, 100vw) !important;
+      height: var(--game-h, 60vw) !important;
+      outline: none;
+    }
+
+    /* Aviso para girar el móvil: el juego es horizontal. */
+    #rotate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: #2b1030;
+      color: #f6c6f0;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      font-size: 20px;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    #rotate .phone {
+      width: 46px;
+      height: 76px;
+      border: 4px solid #f6c6f0;
+      border-radius: 10px;
+      animation: turn 2s ease-in-out infinite;
+    }
+    @keyframes turn {
+      0%, 30% { transform: rotate(0deg); }
+      60%, 100% { transform: rotate(-90deg); }
+    }
+    @media (orientation: portrait) and (pointer: coarse) {
+      #rotate { display: flex; }
+    }
+
+    /* Pantalla de carga mientras arranca la base de datos */
+    #boot {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      background: #000;
+      color: #f6c6f0;
+      font-size: 16px;
+    }
+    #boot img { width: min(60vw, 420px); }
+    #boot.hidden { display: none; }
+
+    /* Cuadro de texto para escribir con el teclado del móvil (ver bellas-keyboard.js) */
+    #kb-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: rgba(0, 0, 0, .55);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: max(4vh, env(safe-area-inset-top));
+    }
+    #kb-box {
+      width: min(92vw, 560px);
+      background: #2b1030;
+      border: 2px solid #d48fd0;
+      border-radius: 14px;
+      padding: 14px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    }
+    #kb-box label { color: #f6c6f0; font-size: 15px; }
+    #kb-input {
+      font-size: 18px; /* >=16px evita el zoom automático de iOS */
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d48fd0;
+      background: #fff;
+      color: #222;
+      width: 100%;
+      box-sizing: border-box;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+    textarea#kb-input { min-height: 34vh; resize: none; }
+    #kb-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+    #kb-buttons button {
+      font-size: 16px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+    #kb-cancel { background: #5a3a5e; color: #fff; }
+    #kb-ok { background: #e889d9; color: #2b1030; font-weight: 700; }
+  </style>
+</head>
+<body oncontextmenu="return false">
+  <div id="stage">
+    <canvas id="canvas" tabindex="0"></canvas>
+  </div>
+
+  <div id="boot">
+    <img src="assets/photos/logo.png" alt="Bella's Heart">
+    <div id="boot-msg">Cargando…</div>
+  </div>
+
+  <div id="rotate">
+    <div class="phone"></div>
+    <div>Gira el móvil para jugar en horizontal</div>
+  </div>
+
+  <script src="sqljs/sql-wasm.js"></script>
+  <script src="bellas-db.js"></script>
+  <script src="bellas-keyboard.js"></script>
+  <script>
+    // Escala el canvas (1280x768) para que quepa entero en la pantalla, manteniendo la proporción.
+    (function () {
+      var W = 1280, H = 768;
+      function fit() {
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var s = Math.min(vw / W, vh / H);
+        document.documentElement.style.setProperty("--game-w", Math.floor(W * s) + "px");
+        document.documentElement.style.setProperty("--game-h", Math.floor(H * s) + "px");
+      }
+      window.addEventListener("resize", fit);
+      window.addEventListener("orientationchange", function () { setTimeout(fit, 250); });
+      fit();
+    })();
+  </script>
+  <script src="app.js"></script>
+  <script>
+    window.addEventListener("load", function () {
+      BellasDB.init()
+        .then(function () {
+          document.getElementById("boot").classList.add("hidden");
+          main();
+        })
+        .catch(function (e) {
+          console.error(e);
+          document.getElementById("boot-msg").textContent =
+            "No se pudo iniciar el juego en este navegador. Prueba a recargar la página.";
+        });
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").catch(function (e) {
+          console.warn("Service worker no registrado", e);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
