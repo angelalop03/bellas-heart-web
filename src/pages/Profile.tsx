@@ -1,15 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, Info, KeyRound, LogOut, Trash2 } from 'lucide-react';
-import { supabase, friendlyError } from '../lib/supabase';
+import { api, friendlyError } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Backdrop, ConfirmDialog, Modal, PageHead, Spinner, useToast } from '../components/ui';
 import { InstallPrompt } from '../components/InstallPrompt';
-import { PasswordInput } from './Auth';
+import { MIN_PASSWORD, PasswordInput } from './Auth';
 import { AVATARS, BACKDROPS, img } from '../lib/assets';
 
 export function ProfilePage() {
-  const { profile, session, refreshProfile, signOut } = useAuth();
+  const { user: profile, setUser, signOut } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [form, setForm] = useState({ username: '', first_name: '', last_name: '', avatar: 'default_image' });
@@ -41,14 +41,20 @@ export function ProfilePage() {
     }
     setSaving(true);
     setError(null);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ username, first_name: form.first_name.trim(), last_name: form.last_name.trim(), avatar: form.avatar })
-      .eq('id', profile!.id);
-    setSaving(false);
-    if (error) return setError(friendlyError(error));
-    await refreshProfile();
-    toast('Perfil guardado');
+    try {
+      const { user } = await api.updateProfile({
+        username,
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        avatar: form.avatar,
+      });
+      setUser(user);
+      toast('Perfil guardado');
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -61,7 +67,7 @@ export function ProfilePage() {
           <img className="avatar avatar-xl" src={img.avatar(form.avatar)} alt="Tu foto de perfil" />
           <div>
             <p className="title-md" style={{ fontSize: '1.3rem' }}>{profile.username}</p>
-            <p className="faint">{session?.user.email}</p>
+            <p className="faint">{profile.email}</p>
           </div>
         </div>
 
@@ -125,13 +131,14 @@ export function ProfilePage() {
           }}
         />
       )}
-      {showDelete && <DeleteAccount email={session?.user.email ?? ''} onClose={() => setShowDelete(false)} />}
+      {showDelete && <DeleteAccount onClose={() => setShowDelete(false)} />}
     </div>
   );
 }
 
 function ChangePassword({ onClose }: { onClose: () => void }) {
   const toast = useToast();
+  const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -142,18 +149,25 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
     if (password !== confirm) return setError('Las contraseñas no coinciden.');
     setBusy(true);
     setError(null);
-    const { error } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (error) return setError(friendlyError(error));
-    toast('Contraseña actualizada');
-    onClose();
+    try {
+      await api.changePassword(current, password);
+      toast('Contraseña actualizada');
+      onClose();
+    } catch (err) {
+      setError(friendlyError(err));
+      setBusy(false);
+    }
   }
 
   return (
     <Modal title="Cambiar contraseña" onClose={onClose}>
       <form className="form" onSubmit={submit}>
         <div className="field">
-          <label htmlFor="new-password">Nueva contraseña</label>
+          <label htmlFor="current-password">Contraseña actual</label>
+          <PasswordInput id="current-password" value={current} onChange={setCurrent} autoComplete="current-password" minLength={1} />
+        </div>
+        <div className="field">
+          <label htmlFor="new-password">Nueva contraseña (mínimo {MIN_PASSWORD} caracteres)</label>
           <PasswordInput id="new-password" value={password} onChange={setPassword} autoComplete="new-password" />
         </div>
         <div className="field">
@@ -170,7 +184,7 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
   );
 }
 
-function DeleteAccount({ email, onClose }: { email: string; onClose: () => void }) {
+function DeleteAccount({ onClose }: { onClose: () => void }) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
@@ -181,19 +195,15 @@ function DeleteAccount({ email, onClose }: { email: string; onClose: () => void 
     e.preventDefault();
     setBusy(true);
     setError(null);
-    // Se comprueba la contraseña antes de borrar nada
-    const check = await supabase.auth.signInWithPassword({ email, password });
-    if (check.error) {
+    // El servidor comprueba la contraseña antes de borrar nada
+    try {
+      await api.deleteAccount(password);
+      await signOut();
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(friendlyError(err));
       setBusy(false);
-      return setError('La contraseña no es correcta.');
     }
-    const { error } = await supabase.rpc('delete_my_account');
-    if (error) {
-      setBusy(false);
-      return setError(friendlyError(error));
-    }
-    await signOut();
-    navigate('/', { replace: true });
   }
 
   return (
@@ -202,7 +212,7 @@ function DeleteAccount({ email, onClose }: { email: string; onClose: () => void 
         <p className="muted">Se borrarán tu perfil, tus partidas y todas tus decisiones. No se puede deshacer.</p>
         <div className="field">
           <label htmlFor="delete-password">Escribe tu contraseña para confirmar</label>
-          <PasswordInput id="delete-password" value={password} onChange={setPassword} autoComplete="current-password" />
+          <PasswordInput id="delete-password" value={password} onChange={setPassword} autoComplete="current-password" minLength={1} />
         </div>
         {error && <div className="alert alert-error" role="alert">{error}</div>}
         <div className="row" style={{ justifyContent: 'flex-end' }}>

@@ -1,47 +1,20 @@
 import { Link } from 'react-router-dom';
 import { BookHeart, BookOpen, Gamepad2, GraduationCap, LifeBuoy, Newspaper, Play, Plus } from 'lucide-react';
 import { useAuth } from '../lib/auth';
-import { supabase } from '../lib/supabase';
-import { unwrap, useAsync } from '../lib/useAsync';
+import { api } from '../lib/api';
+import { useAsync } from '../lib/useAsync';
 import { Backdrop } from '../components/ui';
 import { StateMeters } from '../components/StateMeters';
 import { BACKDROPS, img } from '../lib/assets';
-import type { Chapter, Game, History, Scene } from '../lib/types';
 import { chapterLabel } from '../lib/story';
-
-interface ContinueInfo {
-  game: Game;
-  history: History | null;
-  chapter: Chapter | null;
-  scene: Scene | null;
-}
-
-async function loadContinue(userId: string | undefined): Promise<ContinueInfo | null> {
-  if (!userId) return null;
-  // Filtrar por usuaria: una cuenta admin puede ver todas las partidas
-  const games = unwrap(
-    await supabase.from('games').select('*').eq('user_id', userId).eq('state', 'IN_PROGRESS').order('updated_at', { ascending: false }).limit(1),
-  ) as Game[];
-  const game = games[0];
-  if (!game) return null;
-  const [history, chapter, scene] = await Promise.all([
-    supabase.from('histories').select('*').eq('id', game.history_id).maybeSingle(),
-    game.current_chapter_id ? supabase.from('chapters').select('*').eq('id', game.current_chapter_id).maybeSingle() : null,
-    game.current_scene_id ? supabase.from('scenes').select('*').eq('id', game.current_scene_id).maybeSingle() : null,
-  ]);
-  return {
-    game,
-    history: (history.data as History | null) ?? null,
-    chapter: (chapter?.data as Chapter | null) ?? null,
-    scene: (scene?.data as Scene | null) ?? null,
-  };
-}
+import type { Chapter } from '../lib/types';
 
 export function Home() {
-  const { profile, session } = useAuth();
-  const userId = session?.user.id;
-  const { data: cont, loading } = useAsync(() => loadContinue(userId), [userId]);
+  const { user: profile } = useAuth();
+  const { data: cont, loading } = useAsync(() => api.continueGame(), [profile?.id]);
   const name = profile?.first_name || profile?.username || '';
+  const chapter =
+    cont?.chapter_number != null ? ({ name: cont.chapter_name ?? '', chapter_number: cont.chapter_number } as Chapter) : null;
 
   return (
     <div className="page">
@@ -57,16 +30,16 @@ export function Home() {
       {loading ? (
         <div className="card continue-card skeleton" aria-hidden="true" />
       ) : cont ? (
-        <Link to={`/jugar/${cont.game.id}`} className="continue-card card-link" aria-label={`Continuar ${cont.game.name}`}>
-          <div className="continue-bg" style={{ backgroundImage: `url("${img.scene(cont.scene?.background_image)}")` }} />
+        <Link to={`/jugar/${cont.id}`} className="continue-card card-link" aria-label={`Continuar ${cont.name}`}>
+          <div className="continue-bg" style={{ backgroundImage: `url("${img.scene(cont.background_image)}")` }} />
           <div className="continue-body">
             <span className="badge badge-pink">Continuar</span>
-            <h2 className="title-md" style={{ fontSize: '1.4rem' }}>{cont.game.name}</h2>
+            <h2 className="title-md" style={{ fontSize: '1.4rem' }}>{cont.name}</h2>
             <p className="muted">
-              {cont.history?.title}
-              {cont.chapter ? ` · ${chapterLabel(cont.chapter)}` : ''}
+              {cont.history_title}
+              {chapter ? ` · ${chapterLabel(chapter)}` : ''}
             </p>
-            <StateMeters pointsM={cont.game.points_m} pointsR={cont.game.points_r} compact />
+            <StateMeters pointsM={cont.points_m} pointsR={cont.points_r} compact />
             <span className="btn btn-primary continue-play">
               <Play size={20} fill="currentColor" /> Seguir jugando
             </span>

@@ -1,16 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
 import { Newspaper } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { unwrap, useAsync } from '../lib/useAsync';
+import { api } from '../lib/api';
+import { useAsync } from '../lib/useAsync';
 import { Backdrop, Empty, PageHead, Spinner, formatDate } from '../components/ui';
 import { BACKDROPS } from '../lib/assets';
-import type { News } from '../lib/types';
 
 export function Forum() {
-  const { data: news, loading, error } = useAsync(
-    async () => unwrap(await supabase.from('news').select('*').order('created_at', { ascending: false }).order('id', { ascending: false })) as News[],
-    [],
-  );
+  const { data: news, loading, error } = useAsync(() => api.news(), []);
   return (
     <div className="page">
       <Backdrop src={BACKDROPS.forum} />
@@ -34,10 +30,7 @@ export function Forum() {
 
 export function NewsDetail() {
   const { newsId } = useParams();
-  const { data: item, loading, error } = useAsync(
-    async () => unwrap(await supabase.from('news').select('*').eq('id', Number(newsId)).maybeSingle()) as News | null,
-    [newsId],
-  );
+  const { data: item, loading, error } = useAsync(() => api.newsItem(Number(newsId)), [newsId]);
   return (
     <div className="page">
       <Backdrop src={BACKDROPS.forum} />

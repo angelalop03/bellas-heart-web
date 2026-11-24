@@ -1,23 +1,16 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { BookHeart, Brain, HeartCrack, MessageCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../lib/auth';
-import { unwrap, useAsync } from '../lib/useAsync';
+import { api } from '../lib/api';
+import { useAsync } from '../lib/useAsync';
 import { Backdrop, Empty, PageHead, Spinner, formatDate } from '../components/ui';
 import { StateMeters } from '../components/StateMeters';
 import { BACKDROPS, img, speakerName } from '../lib/assets';
 import { chapterLabel, loadStory } from '../lib/story';
-import type { Game, GameChoice } from '../lib/types';
+import type { GameChoice } from '../lib/types';
 
 export function HistoryList() {
-  const { session } = useAuth();
-  const userId = session?.user.id;
-  const { data: games, loading, error } = useAsync(
-    async () =>
-      unwrap(await supabase.from('games').select('*').eq('user_id', userId!).order('updated_at', { ascending: false })) as Game[],
-    [userId],
-  );
+  const { data: games, loading, error } = useAsync(() => api.games(), []);
 
   return (
     <div className="page">
@@ -54,13 +47,9 @@ export function HistoryDetail() {
   const [onlySignals, setOnlySignals] = useState(true);
 
   const { data, loading, error } = useAsync(async () => {
-    const game = unwrap(await supabase.from('games').select('*').eq('id', id).maybeSingle()) as Game | null;
-    if (!game) throw new Error('No encontramos esta partida');
-    const [choices, story] = await Promise.all([
-      supabase.from('game_choices').select('*').eq('game_id', id).order('id').range(0, 4999),
-      loadStory(game.history_id),
-    ]);
-    return { game, choices: unwrap(choices) as GameChoice[], story };
+    const { game, choices } = await api.choices(id);
+    const story = await loadStory(game.history_id);
+    return { game, choices, story };
   }, [id]);
 
   const groups = useMemo(() => {

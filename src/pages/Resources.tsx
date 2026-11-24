@@ -25,11 +25,11 @@ const LINKS = [
 ];
 
 export function Resources() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   return (
     <div className="page">
       <Backdrop src={BACKDROPS.resources} />
-      <PageHead title="Recursos de ayuda" back={session ? '/inicio' : '/'} />
+      <PageHead title="Recursos de ayuda" back={user ? '/inicio' : '/'} />
       <section className="glass help-hero">
         <p>
           Si estás sufriendo violencia de género, o conoces a alguien que la sufre, puedes pedir ayuda especializada.

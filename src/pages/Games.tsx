@@ -1,40 +1,33 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Check, GitBranch, Lock, Play, Plus, Trash2, Trophy } from 'lucide-react';
-import { supabase, friendlyError } from '../lib/supabase';
-import { useAuth } from '../lib/auth';
-import { unwrap, useAsync } from '../lib/useAsync';
+import { api, friendlyError, type GameWithTitle } from '../lib/api';
+import { useAsync } from '../lib/useAsync';
 import { Backdrop, ConfirmDialog, Empty, PageHead, Spinner, formatDate, useToast } from '../components/ui';
 import { StateMeters } from '../components/StateMeters';
 import { BACKDROPS, img } from '../lib/assets';
 import { chapterLabel, chapterSortKey } from '../lib/story';
-import type { Chapter, Game, GameChapter, History } from '../lib/types';
+import type { Chapter } from '../lib/types';
 
 export function Games() {
-  const { session } = useAuth();
   const toast = useToast();
-  const userId = session?.user.id;
-  const [toDelete, setToDelete] = useState<Game | null>(null);
+  const [toDelete, setToDelete] = useState<GameWithTitle | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const { data, loading, error, reload } = useAsync(async () => {
-    const games = unwrap(
-      await supabase.from('games').select('*').eq('user_id', userId!).order('updated_at', { ascending: false }),
-    ) as Game[];
-    const histories = unwrap(await supabase.from('histories').select('id,title,image_path')) as History[];
-    return { games, histories: new Map(histories.map((h) => [h.id, h])) };
-  }, [userId]);
+  const { data, loading, error, reload } = useAsync(async () => ({ games: await api.games() }), []);
 
   async function remove() {
     if (!toDelete) return;
     setBusy(true);
-    const { error } = await supabase.from('games').delete().eq('id', toDelete.id);
-    setBusy(false);
-    setToDelete(null);
-    if (error) toast(friendlyError(error));
-    else {
+    try {
+      await api.deleteGame(toDelete.id);
       toast('Partida borrada');
       reload();
+    } catch (err) {
+      toast(friendlyError(err));
+    } finally {
+      setBusy(false);
+      setToDelete(null);
     }
   }
 
@@ -64,7 +57,7 @@ export function Games() {
                 <div>
                   <h2 className="title-md">{game.name}</h2>
                   <p className="faint">
-                    {data.histories.get(game.history_id)?.title} · {formatDate(game.created_at)}
+                    {game.history_title} · {formatDate(game.created_at)}
                   </p>
                 </div>
                 {game.state === 'FINISHED' ? (
@@ -112,16 +105,11 @@ export function GameChapters() {
   const navigate = useNavigate();
 
   const { data, loading, error } = useAsync(async () => {
-    const game = unwrap(await supabase.from('games').select('*').eq('id', id).maybeSingle()) as Game | null;
-    if (!game) throw new Error('No encontramos esta partida');
-    const [chapters, progress] = await Promise.all([
-      supabase.from('chapters').select('*').eq('history_id', game.history_id),
-      supabase.from('game_chapters').select('*').eq('game_id', id),
-    ]);
+    const { game, chapters, progress } = await api.game(id);
     return {
       game,
-      chapters: (unwrap(chapters) as Chapter[]).sort((a, b) => chapterSortKey(a) - chapterSortKey(b)),
-      progress: new Map((unwrap(progress) as GameChapter[]).map((p) => [p.chapter_id, p])),
+      chapters: [...chapters].sort((a, b) => chapterSortKey(a) - chapterSortKey(b)),
+      progress: new Map(progress.map((p) => [p.chapter_id, p])),
     };
   }, [id]);
 

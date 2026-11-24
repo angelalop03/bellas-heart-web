@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react';
-import { friendlyError } from './supabase';
+import { friendlyError } from './api';
 
 /** Carga datos asíncronos con estado de carga y error, y permite recargarlos. */
 export function useAsync<T>(fn: () => Promise<T>, deps: DependencyList) {
@@ -30,10 +30,4 @@ export function useAsync<T>(fn: () => Promise<T>, deps: DependencyList) {
   }, [reload]);
 
   return { data, error, loading, reload, setData };
-}
-
-/** Lanza el error de Supabase si lo hay y devuelve los datos. */
-export function unwrap<T>(result: { data: T | null; error: unknown }): T {
-  if (result.error) throw result.error;
-  return result.data as T;
 }

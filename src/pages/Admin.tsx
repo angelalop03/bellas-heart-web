@@ -1,17 +1,17 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Newspaper, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
-import { supabase, friendlyError } from '../lib/supabase';
+import { api, friendlyError } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { unwrap, useAsync } from '../lib/useAsync';
+import { useAsync } from '../lib/useAsync';
 import { Backdrop, ConfirmDialog, Empty, Modal, PageHead, Spinner, formatDate, useToast } from '../components/ui';
 import { StateMeters } from '../components/StateMeters';
 import { BACKDROPS, img } from '../lib/assets';
-import type { Game, News, Profile } from '../lib/types';
+import type { News } from '../lib/types';
 
 export default function Admin() {
-  const { profile, loading } = useAuth();
-  if (loading || (!profile && loading)) return <Spinner />;
+  const { user: profile, loading } = useAuth();
+  if (loading) return <Spinner />;
   if (profile?.role !== 'admin') {
     return (
       <div className="page" style={{ paddingTop: 48 }}>
@@ -52,16 +52,17 @@ function AdminNews() {
   const toast = useToast();
   const [editing, setEditing] = useState<Partial<News> | null>(null);
   const [toDelete, setToDelete] = useState<News | null>(null);
-  const { data: news, loading, error, reload } = useAsync(
-    async () => unwrap(await supabase.from('news').select('*').order('created_at', { ascending: false }).order('id', { ascending: false })) as News[],
-    [],
-  );
+  const { data: news, loading, error, reload } = useAsync(() => api.news(), []);
 
   async function remove() {
     if (!toDelete) return;
-    const { error } = await supabase.from('news').delete().eq('id', toDelete.id);
+    try {
+      await api.deleteNews(toDelete.id);
+      toast('Noticia eliminada');
+    } catch (err) {
+      toast(friendlyError(err));
+    }
     setToDelete(null);
-    toast(error ? friendlyError(error) : 'Noticia eliminada');
     reload();
   }
 
@@ -132,13 +133,14 @@ function NewsForm({ initial, onClose, onSaved }: { initial: Partial<News>; onClo
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const values = { title: title.trim(), body: body.trim() };
-    const { error } = initial.id
-      ? await supabase.from('news').update(values).eq('id', initial.id)
-      : await supabase.from('news').insert(values);
-    setBusy(false);
-    if (error) return setError(friendlyError(error));
-    onSaved();
+    try {
+      if (initial.id) await api.updateNews(initial.id, title.trim(), body.trim());
+      else await api.createNews(title.trim(), body.trim());
+      onSaved();
+    } catch (err) {
+      setError(friendlyError(err));
+      setBusy(false);
+    }
   }
 
   return (
@@ -166,13 +168,7 @@ function NewsForm({ initial, onClose, onSaved }: { initial: Partial<News>; onClo
 
 function AdminPlayers() {
   const [query, setQuery] = useState('');
-  const { data, loading, error } = useAsync(async () => {
-    const profiles = unwrap(await supabase.from('profiles').select('*').order('created_at', { ascending: false })) as Profile[];
-    const games = unwrap(await supabase.from('games').select('user_id').range(0, 9999)) as Pick<Game, 'user_id'>[];
-    const counts = new Map<string, number>();
-    for (const g of games) counts.set(g.user_id, (counts.get(g.user_id) ?? 0) + 1);
-    return { profiles, counts };
-  }, []);
+  const { data, loading, error } = useAsync(async () => ({ profiles: await api.players() }), []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -202,7 +198,7 @@ function AdminPlayers() {
                 {[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Sin nombre'} · desde {formatDate(p.created_at)}
               </p>
             </div>
-            <span className="badge">{data?.counts.get(p.id) ?? 0} partidas</span>
+            <span className="badge">{p.games} partidas</span>
           </Link>
         ))}
       </div>
@@ -212,27 +208,29 @@ function AdminPlayers() {
 
 function AdminPlayer() {
   const { userId } = useParams();
-  const { profile: me } = useAuth();
+  const { user: me } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error } = useAsync(async () => {
-    const profile = unwrap(await supabase.from('profiles').select('*').eq('id', userId!).maybeSingle()) as Profile | null;
-    if (!profile) throw new Error('No encontramos a esta jugadora');
-    const games = unwrap(await supabase.from('games').select('*').eq('user_id', userId!).order('updated_at', { ascending: false })) as Game[];
-    return { profile, games };
+    const { player, games } = await api.player(userId!);
+    return { profile: player, games };
   }, [userId]);
 
   async function remove() {
     setBusy(true);
-    const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId });
-    setBusy(false);
-    setConfirmDelete(false);
-    if (error) return toast(friendlyError(error));
-    toast('Cuenta eliminada');
-    navigate('/admin/jugadores', { replace: true });
+    try {
+      await api.deletePlayer(userId!);
+      toast('Cuenta eliminada');
+      navigate('/admin/jugadores', { replace: true });
+    } catch (err) {
+      toast(friendlyError(err));
+    } finally {
+      setBusy(false);
+      setConfirmDelete(false);
+    }
   }
 
   if (loading) return <Spinner />;
@@ -246,7 +244,7 @@ function AdminPlayer() {
         <img className="avatar avatar-lg" src={img.avatar(profile.avatar)} alt="" />
         <div>
           <p className="title-md">{[profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Sin nombre'}</p>
-          <p className="faint">Registrada el {formatDate(profile.created_at)} · {games.length} partidas</p>
+          <p className="faint">{profile.email} · registrada el {formatDate(profile.created_at)} · {games.length} partidas</p>
         </div>
       </div>
       {games.length === 0 && <Empty title="Sin partidas" />}

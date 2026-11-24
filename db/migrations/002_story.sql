@@ -1,6 +1,5 @@
--- Contenido inicial de Bella's Heart (generado a partir de la base de datos del juego original)
--- Historias, capítulos, personajes, escenas, decisiones, opciones y noticias.
-begin;
+-- Historia de Bella's Heart: historias, capítulos, personajes, escenas, decisiones, opciones y noticias
+-- (exportada de la base de datos del juego original).
 
 -- histories (2)
 insert into public.histories (id, title, description, image_path, published) values
@@ -3673,4 +3672,3 @@ insert into public.news (id, title, body) values
 (3, 'La violencia que no cesa: 2024 acaba con 47 mujeres y nueve menores asesinados en crimenes machistas', 'Ana fue asesinada por su pareja el 12 de enero de 2024, tenía 57 años; Diana el 30 de diciembre, con 29 años. También por su pareja. Convivían pese a que él tuviera una orden de alejamiento. En 2024 hubo 47 mujeres asesinadas por violencia machista. Es una cifra aterradora, aunque sea la menor desde 2003, año en el que empezó el recuento oficial de esta violencia estructural que no cesa y que ha acabado con la vida de 1.292 mujeres. En 2024 fueron asesinados también por violencia vicaria nueve menores, hijos e hijas de madres víctimas de sus parejas o exparejas. Es la cifra más alta junto a la que se registró en 2015 (en 2023 fueron, por ejemplo, dos; como en 2022).De las 47 mujeres asesinadas en 2024, un total de 24 eran extranjeras y 23 españolas. De los agresores, solo13 tenían denuncias por maltrato. Once se suicidaron tras cometer los crímenes, por lo que no podrán ser juzgados. En 30 casos, la víctima convivía con el agresor y 19 de ellas se habían separado o habían iniciado los trámites para hacerlo. En seis de los casos falló todo: las víctimas habían denunciado a sus agresores y estaban inscritas en el Sistema VioGén ―el sistema de protección de las víctimas de violencia de género―, pero los mecanismos con los que cuenta el Estado para protegerlas fracasaron.');
 select setval(pg_get_serial_sequence('public.news', 'id'), (select max(id) from public.news));
 
-commit;

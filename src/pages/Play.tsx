@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, Home, LifeBuoy, Music, BookHeart, Volume2, VolumeX, Sparkles, Trophy } from 'lucide-react';
-import { supabase, friendlyError } from '../lib/supabase';
+import { api, friendlyError } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { loadStory, chapterLabel, type Story } from '../lib/story';
 import { availableOptions, chooseLocal, startChapter, type LocalProgress } from '../lib/engine';
@@ -10,7 +10,7 @@ import { getMusicPrefs, playMusic, setMusicMuted, setMusicVolume, stopMusic } fr
 import { PSYCH_INFO, psychState, RELATION_INFO, relationState } from '../lib/states';
 import { StateMeters } from '../components/StateMeters';
 import { Spinner, useToast } from '../components/ui';
-import type { ChooseResult, Game, Option } from '../lib/types';
+import type { Game, Option } from '../lib/types';
 
 type Mode = 'game' | 'tutorial';
 
@@ -62,7 +62,7 @@ export default function Play({ mode }: { mode: Mode }) {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
-  const { session } = useAuth();
+  const { user } = useAuth();
 
   const [story, setStory] = useState<Story | null>(null);
   const [game, setGame] = useState<Game | null>(null);
@@ -87,10 +87,7 @@ export default function Play({ mode }: { mode: Mode }) {
             setProgress(startChapter(s, chapter.id));
           }
         } else {
-          const { data, error } = await supabase.from('games').select('*').eq('id', Number(gameId)).maybeSingle();
-          if (error) throw error;
-          if (!data) throw new Error('No encontramos esta partida');
-          const g = data as Game;
+          const { game: g } = await api.game(Number(gameId));
           const s = await loadStory(g.history_id);
           if (!cancelled) {
             setStory(s);
@@ -165,14 +162,16 @@ export default function Play({ mode }: { mode: Mode }) {
       // Avance inmediato dentro del capítulo; el servidor confirma (y decide el siguiente capítulo).
       if (!optimistic.finished) setProgress(optimistic);
       setBusy(true);
-      const { data, error } = await supabase.rpc('choose_option', { p_game_id: game.id, p_option_id: option.id });
-      setBusy(false);
-      if (error) {
+      let result;
+      try {
+        result = await api.choose(game.id, option.id);
+      } catch (err) {
         setProgress(previous);
-        toast(friendlyError(error));
+        toast(friendlyError(err));
         return;
+      } finally {
+        setBusy(false);
       }
-      const result = data as ChooseResult;
       const completed = story.chapterById.get(previous.chapterId);
       setGame(result.game);
       setProgress(progressFromGame(result.game));
@@ -208,7 +207,7 @@ export default function Play({ mode }: { mode: Mode }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [options, typer, choose, interlude, showSettings]);
 
-  const exitTo = mode === 'tutorial' ? (session ? '/inicio' : '/') : game ? `/partidas/${game.id}` : '/partidas';
+  const exitTo = mode === 'tutorial' ? (user ? '/inicio' : '/') : game ? `/partidas/${game.id}` : '/partidas';
 
   // ---------- Render ----------
   if (loadError) {
@@ -351,7 +350,7 @@ export default function Play({ mode }: { mode: Mode }) {
           interlude={interlude}
           story={story}
           game={game}
-          loggedIn={Boolean(session)}
+          loggedIn={Boolean(user)}
           onContinue={() => setInterlude(null)}
           onExit={() => navigate(exitTo)}
         />

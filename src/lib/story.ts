@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { api } from './api';
 import type { Chapter, Character, Decision, Option, Scene, StoryData } from './types';
 
 /** Historia ya indexada para consultas rápidas durante el juego. */
@@ -61,8 +61,7 @@ export function loadStory(historyId: number | null): Promise<Story> {
   if (cached) return cached;
 
   const fetchFresh = async () => {
-    const { data, error } = await supabase.rpc('get_story', { p_history_id: historyId });
-    if (error) throw error;
+    const data = await api.story(historyId);
     try {
       localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(data));
     } catch {

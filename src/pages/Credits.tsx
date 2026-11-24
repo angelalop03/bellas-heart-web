@@ -3,11 +3,11 @@ import { BACKDROPS, img } from '../lib/assets';
 import { useAuth } from '../lib/auth';
 
 export function Credits() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   return (
     <div className="page">
       <Backdrop src={BACKDROPS.night} />
-      <PageHead title="Sobre el proyecto" back={session ? '/inicio' : '/'} />
+      <PageHead title="Sobre el proyecto" back={user ? '/inicio' : '/'} />
       <article className="glass article" style={{ textAlign: 'center' }}>
         <img src={img.ui('logo')} alt="Bella's Heart" style={{ width: 'min(70%, 280px)', margin: '0 auto' }} />
         <p>

@@ -12,67 +12,56 @@ Esta versión es una **PWA**: se juega desde el navegador del móvil o del orden
 - **Historial** de decisiones por partida, con un filtro para ver solo las que aumentaron el malestar de Bella o la tensión.
 - **Tutorial** jugable sin cuenta, **noticias**, **recursos de ayuda** (016, 112, Fundación Ana Bella…) siempre a mano y **perfil** (avatar, datos, contraseña, borrar cuenta).
 - **Administración básica**: crear, editar y borrar noticias; ver jugadoras, sus partidas y decisiones, y eliminar cuentas.
-- Cuentas con email y contraseña (Supabase Auth), recuperación de contraseña y seguridad por filas (RLS): cada jugadora solo ve sus datos y la lógica del juego se ejecuta en la base de datos.
 
 ## Tecnología
 
-- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vite.dev/), con [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) (manifest, service worker y modo sin conexión para la app).
-- [Supabase](https://supabase.com/): PostgreSQL, Auth y funciones SQL (`create_game`, `choose_option`, `get_story`…).
-- Despliegue en [Vercel](https://vercel.com/).
-- Las ilustraciones originales se han convertido a WebP: de ~100 MB a ~4,5 MB, sin pérdida visible.
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vite.dev/), con [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) (manifest, service worker y la app disponible sin conexión).
+- **Base de datos: [Neon](https://neon.tech/) (PostgreSQL)**. La lógica de la partida vive en funciones SQL (`create_game`, `choose_option`, `get_story`), así el progreso siempre es coherente.
+- **Servidor: Vercel Functions** (`api/`, código en `server/`). Gestiona las cuentas (contraseñas con bcrypt, sesión en cookie `HttpOnly` firmada), protege contra CSRF, limita los intentos de inicio de sesión y comprueba que cada jugadora solo acceda a sus datos.
+- Despliegue en [Vercel](https://vercel.com/). Las ilustraciones originales se han convertido a WebP: de ~100 MB a ~4,5 MB, sin pérdida visible.
 
 ```
-src/
-  pages/        Pantallas (Play.tsx es la pantalla de juego)
-  components/   Interfaz común (navegación, medidores, diálogos…)
-  lib/          Supabase, sesión, historia, estados y motor del tutorial
-public/
-  img/          Fondos, personajes, capítulos y avatares (WebP)
-  music/        Música del juego
-supabase/
-  migrations/   Esquema, seguridad (RLS) y lógica de la partida
-  seed.sql      Contenido de la historia (capítulos, escenas, diálogos y opciones)
+src/            App React (src/pages/Play.tsx es la pantalla de juego)
+server/         API: rutas, sesiones y acceso a la base de datos
+api/index.ts    Función de Vercel que atiende /api/*
+db/migrations/  001_schema.sql (tablas y lógica) y 002_story.sql (la historia)
+scripts/        migrate.mjs: aplica las migraciones pendientes
+public/         Imágenes (WebP), música e iconos
 ```
 
-## Puesta en marcha
+## Desplegar en Vercel + Neon
 
-### 1. Supabase
+1. En [vercel.com](https://vercel.com/), **Add New → Project** e importa este repositorio (detecta *Vite* solo).
+2. En el proyecto, **Storage → Create Database → Neon** y conéctala al proyecto. Vercel añade sola la variable `DATABASE_URL`.
+3. **Redeploy**. En cada despliegue, `npm run build` ejecuta `scripts/migrate.mjs`, que crea las tablas y carga la historia la primera vez (y después solo aplica migraciones nuevas). No hace falta copiar claves ni ejecutar SQL a mano: la clave para firmar sesiones también se genera dentro de la base de datos.
 
-1. Crea un proyecto gratuito en [supabase.com](https://supabase.com/).
-2. En **SQL Editor**, ejecuta el contenido de `supabase/migrations/20261124000000_init.sql` y después el de `supabase/seed.sql`.
-3. En **Authentication → URL Configuration**, pon en *Site URL* la dirección de la web en Vercel (por ejemplo `https://bellas-heart.vercel.app`) y añádela también en *Redirect URLs*.
-4. En **Authentication → Sign In / Providers → Email**: el servidor de correo que trae Supabase de serie solo envía emails a los miembros del equipo del proyecto. Para abrir el registro a cualquiera, desactiva *Confirm email* o configura un SMTP propio (por ejemplo Resend o Brevo, con plan gratuito), que también hace falta para recuperar contraseñas.
-5. Copia la *Project URL* y la clave pública (*anon* / *publishable*) de **Project Settings → API**.
-
-Para hacerte administradora, regístrate en la app y ejecuta en el SQL Editor:
+Para hacerte administradora, regístrate en la web y ejecuta en el **SQL Editor** de Neon:
 
 ```sql
-update public.profiles set role = 'admin' where username = 'tu_usuario';
+update users set role = 'admin' where email = 'tu@email.com';
 ```
 
-### 2. Vercel
+### En el móvil
 
-1. En [vercel.com](https://vercel.com/), **Add New → Project** e importa este repositorio (el framework *Vite* se detecta solo).
-2. Añade las variables de entorno `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` con los valores del paso anterior.
-3. **Deploy**. Cada push a `main` vuelve a publicar la web.
-
-### 3. En el móvil
-
-- **Android (Chrome):** abre la web y toca *Añadir a la pantalla de inicio* en el perfil o en la portada (o menú ⋮ → *Instalar aplicación*).
+- **Android (Chrome):** abre la web y toca *Añadir a la pantalla de inicio* en la portada o en el perfil (o menú ⋮ → *Instalar aplicación*).
 - **iPhone (Safari):** botón *Compartir* → *Añadir a pantalla de inicio*.
 
 ## Desarrollo en local
 
-Requisitos: Node 20+ y Docker (para Supabase local).
+Requisitos: Node 20+ y Docker.
 
 ```bash
 npm install
-npm run db:start      # Supabase local con el esquema y la historia
-cp .env.example .env.local   # y pon la URL y la clave que muestra db:start
-npm run dev           # http://localhost:5173
+npm run db:start      # PostgreSQL local en Docker (puerto 55432)
+npm run db:migrate    # crea las tablas y carga la historia
+npm run dev           # http://localhost:5173 (la API /api funciona igual que en Vercel)
 ```
 
-Otros comandos: `npm run build` (compila la web en `dist/`), `npm run db:reset` (recrea la base de datos local desde cero) y `npm run db:stop`.
+`.env.local` debe tener `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:55432/bellas` (ver `.env.example`).
+
+## Pendiente
+
+- **Recuperar la contraseña por email**: necesita un servicio de correo (por ejemplo Resend). De momento se puede cambiar desde el perfil sabiendo la actual.
 
 ## Créditos
 

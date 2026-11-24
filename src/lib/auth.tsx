@@ -1,70 +1,47 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { api } from './api';
 import type { Profile } from './types';
 
 interface AuthContextValue {
-  session: Session | null;
-  profile: Profile | null;
+  /** Usuaria con la sesión iniciada (null si no hay sesión) */
+  user: Profile | null;
   loading: boolean;
-  /** true tras abrir el enlace de "recuperar contraseña" del email */
-  recovering: boolean;
-  refreshProfile: () => Promise<void>;
+  setUser: (user: Profile | null) => void;
+  refresh: () => Promise<void>;
   signOut: () => Promise<void>;
-  clearRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recovering, setRecovering] = useState(false);
 
-  const loadProfile = useCallback(async (userId: string | undefined) => {
-    if (!userId) {
-      setProfile(null);
-      return;
+  const refresh = useCallback(async () => {
+    try {
+      const { user } = await api.me();
+      setUser(user);
+    } catch {
+      setUser(null);
     }
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    setProfile((data as Profile | null) ?? null);
   }, []);
 
   useEffect(() => {
-    let active = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      await loadProfile(data.session?.user.id);
-      if (active) setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
-      setSession(next);
-      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
-      // Fuera del callback para no bloquear el cliente de Supabase
-      setTimeout(() => loadProfile(next?.user.id), 0);
-    });
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, [loadProfile]);
+    refresh().finally(() => setLoading(false));
+  }, [refresh]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      session,
-      profile,
+      user,
       loading,
-      recovering,
-      refreshProfile: () => loadProfile(session?.user.id),
+      setUser,
+      refresh,
       signOut: async () => {
-        await supabase.auth.signOut();
-        setProfile(null);
+        await api.logout().catch(() => undefined);
+        setUser(null);
       },
-      clearRecovery: () => setRecovering(false),
     }),
-    [session, profile, loading, recovering, loadProfile],
+    [user, loading, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -11,9 +11,9 @@ const NAV = [
 ];
 
 export function Brand() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   return (
-    <Link to={session ? '/inicio' : '/'} className="brand" aria-label="Bella's Heart, inicio">
+    <Link to={user ? '/inicio' : '/'} className="brand" aria-label="Bella's Heart, inicio">
       Bella's <span className="brand-heart">Heart</span>
     </Link>
   );
@@ -21,13 +21,13 @@ export function Brand() {
 
 /** Cabecera + navegación inferior (arriba en pantallas grandes) para la zona de jugadora. */
 export function AppShell() {
-  const { profile, session } = useAuth();
+  const { user } = useAuth();
   return (
-    <div className={`app-shell ${session ? '' : 'no-nav'}`}>
+    <div className={`app-shell ${user ? '' : 'no-nav'}`}>
       <header className="topbar">
         <Brand />
         <div className="topbar-spacer" />
-        {profile?.role === 'admin' && (
+        {user?.role === 'admin' && (
           <Link to="/admin" className="btn btn-sm btn-ghost" aria-label="Administración">
             <ShieldCheck size={18} /> <span className="hide-sm">Admin</span>
           </Link>
@@ -39,7 +39,7 @@ export function AppShell() {
       <main>
         <Outlet />
       </main>
-      {session && (
+      {user && (
       <nav className="bottom-nav" aria-label="Navegación principal">
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to}>

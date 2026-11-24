@@ -1,17 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BookOpen, Play } from 'lucide-react';
-import { supabase, friendlyError } from '../lib/supabase';
-import { unwrap, useAsync } from '../lib/useAsync';
+import { api, friendlyError } from '../lib/api';
+import { useAsync } from '../lib/useAsync';
 import { Backdrop, Empty, PageHead, Spinner } from '../components/ui';
 import { BACKDROPS, img } from '../lib/assets';
-import type { History } from '../lib/types';
 
 export function Stories() {
-  const { data: stories, loading, error } = useAsync(
-    async () => unwrap(await supabase.from('histories').select('*').eq('published', true).order('id')) as History[],
-    [],
-  );
+  const { data: stories, loading, error } = useAsync(() => api.histories(), []);
 
   return (
     <div className="page">
@@ -44,22 +40,21 @@ export function StoryDetail() {
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error: loadError } = useAsync(async () => {
-    const story = unwrap(await supabase.from('histories').select('*').eq('id', id).maybeSingle()) as History | null;
-    const { count } = await supabase
-      .from('chapters')
-      .select('id', { count: 'exact', head: true })
-      .eq('history_id', id);
-    return { story, chapters: count ?? 0 };
+    const { history, chapters } = await api.history(id);
+    return { story: history, chapters };
   }, [id]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { data: gameId, error } = await supabase.rpc('create_game', { p_history_id: id, p_name: name.trim() });
-    setBusy(false);
-    if (error) return setError(friendlyError(error));
-    navigate(`/jugar/${gameId}`, { replace: true });
+    try {
+      const { id: gameId } = await api.createGame(id, name.trim());
+      navigate(`/jugar/${gameId}`, { replace: true });
+    } catch (err) {
+      setBusy(false);
+      setError(friendlyError(err));
+    }
   }
 
   if (loading) return <Spinner />;
