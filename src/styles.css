@@ -26,7 +26,7 @@
   --glass-light: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.14);
 
-  --ok: #6fd6a8;
+  --ok: #c9b3ff;
   --warn: #f7c66b;
   --danger: #ff7a8a;
 
@@ -200,7 +200,7 @@ p { margin: 0; }
   border: 1px solid;
 }
 .alert-error { background: rgba(255, 122, 138, 0.12); border-color: rgba(255, 122, 138, 0.4); color: #ffd6dc; }
-.alert-ok { background: rgba(111, 214, 168, 0.12); border-color: rgba(111, 214, 168, 0.4); color: #d4f7e6; }
+.alert-ok { background: rgba(201, 179, 255, 0.12); border-color: rgba(201, 179, 255, 0.4); color: #ece4ff; }
 .alert-info { background: rgba(178, 140, 240, 0.12); border-color: rgba(178, 140, 240, 0.4); color: #e6dcfb; }
 
 /* ---------- Estructura de la app ---------- */
@@ -218,7 +218,10 @@ p { margin: 0; }
   gap: 10px;
   padding: calc(10px + var(--safe-top)) 16px 10px;
   margin-top: calc(-1 * var(--safe-top));
-  background: linear-gradient(180deg, rgba(20, 8, 26, 0.92), rgba(20, 8, 26, 0.55) 70%, transparent);
+  background: rgba(20, 8, 26, 0.78);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .brand {
   display: flex;
@@ -331,7 +334,7 @@ p { margin: 0; }
   white-space: nowrap;
 }
 .badge-pink { background: rgba(236, 95, 164, 0.18); border-color: rgba(236, 95, 164, 0.5); color: var(--pink-200); }
-.badge-ok { background: rgba(111, 214, 168, 0.15); border-color: rgba(111, 214, 168, 0.45); color: #c9f3df; }
+.badge-ok { background: rgba(201, 179, 255, 0.16); border-color: rgba(201, 179, 255, 0.5); color: #e6dcff; }
 
 .empty {
   text-align: center;

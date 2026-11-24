@@ -24,19 +24,26 @@ interface StateInfo {
   level: number; // 0..3
 }
 
+// Escala de color de la app (lavanda -> rosa -> frambuesa): cuanto más intenso, peor.
+const LEVEL_COLORS = ['#c9b3ff', '#f2a5d6', '#f0659f', '#ff4f74'];
+
 export const PSYCH_INFO: Record<PsychState, StateInfo> = {
-  STABLE: { label: 'Estable', short: 'Estable', color: '#6fd6a8', level: 0 },
-  SLIGHTLY_ANXIOUS: { label: 'Algo inquieta', short: 'Inquieta', color: '#f7c66b', level: 1 },
-  ANXIOUS: { label: 'Ansiosa', short: 'Ansiosa', color: '#ff9f6b', level: 2 },
-  DISTRESSED: { label: 'Angustiada', short: 'Angustiada', color: '#ff6b81', level: 3 },
+  STABLE: { label: 'Estable', short: 'Estable', color: LEVEL_COLORS[0], level: 0 },
+  SLIGHTLY_ANXIOUS: { label: 'Algo inquieta', short: 'Inquieta', color: LEVEL_COLORS[1], level: 1 },
+  ANXIOUS: { label: 'Ansiosa', short: 'Ansiosa', color: LEVEL_COLORS[2], level: 2 },
+  DISTRESSED: { label: 'Angustiada', short: 'Angustiada', color: LEVEL_COLORS[3], level: 3 },
 };
 
 export const RELATION_INFO: Record<RelationState, StateInfo> = {
-  CONFIDENT: { label: 'Confianza', short: 'Confianza', color: '#6fd6a8', level: 0 },
-  LOW_TENSION: { label: 'Tensión leve', short: 'Tensión leve', color: '#f7c66b', level: 1 },
-  HIGH_TENSION: { label: 'Tensión alta', short: 'Tensión alta', color: '#ff9f6b', level: 2 },
-  CRITICAL: { label: 'Crítica', short: 'Crítica', color: '#ff6b81', level: 3 },
+  CONFIDENT: { label: 'Confianza', short: 'Confianza', color: LEVEL_COLORS[0], level: 0 },
+  LOW_TENSION: { label: 'Tensión leve', short: 'Tensión leve', color: LEVEL_COLORS[1], level: 1 },
+  HIGH_TENSION: { label: 'Tensión alta', short: 'Tensión alta', color: LEVEL_COLORS[2], level: 2 },
+  CRITICAL: { label: 'Crítica', short: 'Crítica', color: LEVEL_COLORS[3], level: 3 },
 };
+
+/** Puntos en los que cambia el estado (para dibujar las marcas de la barra). */
+export const PSYCH_THRESHOLDS = [25, 50, 75];
+export const RELATION_THRESHOLDS = [30, 60, 80];
 
 /** Porcentaje 0..100 para las barras (los puntos del juego van de 0 a ~100). */
 export function meterPercent(points: number): number {

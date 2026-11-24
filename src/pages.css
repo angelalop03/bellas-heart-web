@@ -119,6 +119,7 @@
 }
 .continue-body { position: relative; z-index: 2; padding: 18px; display: grid; gap: 8px; }
 .continue-play { justify-self: start; margin-top: 4px; }
+.continue-body > .badge { justify-self: start; }
 
 .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .quick { display: grid; gap: 4px; padding: 16px; }
@@ -137,16 +138,48 @@
 .quick-highlight { border-color: rgba(236, 95, 164, 0.5); }
 
 /* ---------- Medidores de estado ---------- */
-.meters { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
-.meter { display: grid; gap: 5px; min-width: 0; }
-.meter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 0.85rem; }
+.meters { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+.meter { display: grid; gap: 6px; min-width: 0; }
+.meter-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 0.85rem; }
 .meter-title { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font-weight: 700; }
-.meter-label { font-weight: 800; white-space: nowrap; }
-.meter-track { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
-.meter-fill { height: 100%; border-radius: inherit; transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.4s ease; }
-.meters-compact { gap: 8px 12px; }
-.meters-compact .meter-head { font-size: 0.76rem; }
-.meters-compact .meter-track { height: 6px; }
+.meter-label {
+  font-weight: 800;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  transition: color 0.4s ease, background 0.4s ease, border-color 0.4s ease;
+}
+.meter-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background-image: linear-gradient(90deg, #b9a0ff 0%, #e9a1dc 35%, #f0659f 70%, #ff4f74 100%);
+  background-repeat: no-repeat;
+  transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
+}
+.meter-tick {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: rgba(20, 8, 26, 0.55);
+}
+.meters-compact { gap: 8px 12px; grid-template-columns: 1fr 1fr; }
+.meters-compact .meter-head { font-size: 0.74rem; }
+.meters-compact .meter-label { font-size: 0.68rem; padding: 0 6px; }
+.meters-compact .meter-track { height: 7px; }
+.meters-compact .meter-tick { top: 1px; bottom: 1px; }
 
 /* ---------- Historias y partidas ---------- */
 .story-card { display: grid; gap: 12px; }
@@ -190,7 +223,7 @@
   color: var(--text-muted);
   flex-shrink: 0;
 }
-.is-played .chapter-icon { background: rgba(111, 214, 168, 0.2); color: var(--ok); }
+.is-played .chapter-icon { background: rgba(201, 179, 255, 0.2); color: var(--ok); }
 .is-current .chapter-node {
   cursor: pointer;
   border-color: var(--pink-400);
