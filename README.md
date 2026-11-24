@@ -4,6 +4,8 @@
 
 Esta versión es una **PWA**: se juega desde el navegador del móvil o del ordenador y se puede **añadir a la pantalla de inicio** como una app, sin App Store ni Google Play.
 
+### ▶ Jugar: **https://bellas-heart.vercel.app**
+
 ## Qué incluye
 
 - **Historia completa** del juego original: introducción, capítulos 1–5 y ramas 6–9 según cómo evolucione la relación (confianza, tensión leve, tensión alta, crítica), con sus personajes y fondos.
