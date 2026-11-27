@@ -48,7 +48,8 @@ export function indexStory(raw: StoryData): Story {
 }
 
 const memory = new Map<string, Promise<Story>>();
-const CACHE_PREFIX = 'bh-story-v1:';
+// v2: puntuación nueva de las opciones (migración 003)
+const CACHE_PREFIX = 'bh-story-v2:';
 
 /**
  * Descarga la historia completa (capítulos, escenas, diálogos y opciones) en una sola llamada.

@@ -1,5 +1,6 @@
 import { HeartCrack, Brain } from 'lucide-react';
 import {
+  METER_TICKS,
   meterPercent,
   PSYCH_INFO,
   PSYCH_THRESHOLDS,
@@ -18,8 +19,8 @@ export function StateMeters({ pointsM, pointsR, compact }: { pointsM: number; po
   const psych = PSYCH_INFO[psychState(pointsM)];
   const rel = RELATION_INFO[relationState(pointsR)];
   const items = [
-    { key: 'm', icon: <Brain size={compact ? 14 : 17} />, title: 'Bella', info: psych, value: meterPercent(pointsM), ticks: PSYCH_THRESHOLDS },
-    { key: 'r', icon: <HeartCrack size={compact ? 14 : 17} />, title: 'Relación', info: rel, value: meterPercent(pointsR), ticks: RELATION_THRESHOLDS },
+    { key: 'm', icon: <Brain size={compact ? 14 : 17} />, title: 'Bella', info: psych, value: meterPercent(pointsM, PSYCH_THRESHOLDS) },
+    { key: 'r', icon: <HeartCrack size={compact ? 14 : 17} />, title: 'Relación', info: rel, value: meterPercent(pointsR, RELATION_THRESHOLDS) },
   ];
   return (
     <div className={`meters ${compact ? 'meters-compact' : ''}`}>
@@ -33,7 +34,7 @@ export function StateMeters({ pointsM, pointsR, compact }: { pointsM: number; po
             aria-label={`${item.title}: ${item.info.label}`}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={item.value}
+            aria-valuenow={Math.round(item.value)}
           >
             <div className="meter-head">
               <span className="meter-title">
@@ -56,7 +57,7 @@ export function StateMeters({ pointsM, pointsR, compact }: { pointsM: number; po
                   boxShadow: `0 0 12px ${item.info.color}80`,
                 }}
               />
-              {item.ticks.map((t) => (
+              {METER_TICKS.map((t) => (
                 <span key={t} className="meter-tick" style={{ left: `${t}%` }} aria-hidden="true" />
               ))}
             </div>

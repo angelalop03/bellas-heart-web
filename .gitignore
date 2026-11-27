@@ -11,3 +11,6 @@ supabase/.branches/
 .DS_Store
 .idea/
 .vscode/
+
+## Documentos de trabajo (no publicar)
+docs/revision-puntuacion.xlsx

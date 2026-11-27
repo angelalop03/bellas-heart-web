@@ -1,19 +1,27 @@
 import type { PsychState, RelationState } from './types';
 
-// Mismos umbrales que el juego original (y que las funciones SQL).
+/**
+ * Puntos en los que cambia el estado. Deben coincidir con las funciones SQL
+ * psychological_state y relationship_state (db/migrations/003_puntuacion.sql).
+ */
+export const PSYCH_THRESHOLDS = [12, 25, 38];
+export const RELATION_THRESHOLDS = [19, 24, 29];
+
 export function psychState(points: number): PsychState {
   const p = Math.max(points, 0);
-  if (p < 25) return 'STABLE';
-  if (p < 50) return 'SLIGHTLY_ANXIOUS';
-  if (p < 75) return 'ANXIOUS';
+  const [a, b, c] = PSYCH_THRESHOLDS;
+  if (p < a) return 'STABLE';
+  if (p < b) return 'SLIGHTLY_ANXIOUS';
+  if (p < c) return 'ANXIOUS';
   return 'DISTRESSED';
 }
 
 export function relationState(points: number): RelationState {
   const p = Math.max(points, 0);
-  if (p < 30) return 'CONFIDENT';
-  if (p < 60) return 'LOW_TENSION';
-  if (p < 80) return 'HIGH_TENSION';
+  const [a, b, c] = RELATION_THRESHOLDS;
+  if (p < a) return 'CONFIDENT';
+  if (p < b) return 'LOW_TENSION';
+  if (p < c) return 'HIGH_TENSION';
   return 'CRITICAL';
 }
 
@@ -41,11 +49,24 @@ export const RELATION_INFO: Record<RelationState, StateInfo> = {
   CRITICAL: { label: 'Crítica', short: 'Crítica', color: LEVEL_COLORS[3], level: 3 },
 };
 
-/** Puntos en los que cambia el estado (para dibujar las marcas de la barra). */
-export const PSYCH_THRESHOLDS = [25, 50, 75];
-export const RELATION_THRESHOLDS = [30, 60, 80];
+/** En la barra, cada estado ocupa una cuarta parte: las marcas quedan al 25 %, 50 % y 75 %. */
+export const METER_TICKS = [25, 50, 75];
 
-/** Porcentaje 0..100 para las barras (los puntos del juego van de 0 a ~100). */
-export function meterPercent(points: number): number {
+/**
+ * Porcentaje 0..100 de la barra. Se reparte por tramos según los umbrales, así la barra
+ * refleja el estado aunque los puntos sean bajos; el último tramo mide lo mismo que el anterior.
+ */
+export function meterPercent(points: number, thresholds: number[]): number {
+  const [a, b, c] = thresholds;
+  const edges = [0, a, b, c, c + (c - b)];
+  const p = Math.max(0, points);
+  for (let i = 0; i < 4; i++) {
+    if (p < edges[i + 1]) return 25 * i + (25 * (p - edges[i])) / (edges[i + 1] - edges[i]);
+  }
+  return 100;
+}
+
+/** Malestar y tensión siempre entre 0 y 100, igual que en la base de datos. */
+export function clampPoints(points: number): number {
   return Math.min(100, Math.max(0, points));
 }

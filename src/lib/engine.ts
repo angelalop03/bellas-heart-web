@@ -1,5 +1,5 @@
 import { firstDecisionOfScene, firstSceneOfChapter, type Story } from './story';
-import { psychState } from './states';
+import { clampPoints, psychState } from './states';
 import type { Option } from './types';
 
 /** Posición dentro de un capítulo. Se usa para el tutorial, que no se guarda en la base de datos. */
@@ -38,8 +38,8 @@ export function availableOptions(story: Story, decisionId: number | null, points
 export function chooseLocal(story: Story, progress: LocalProgress, option: Option): LocalProgress {
   const next: LocalProgress = {
     ...progress,
-    points_m: progress.points_m + option.points_m,
-    points_r: progress.points_r + option.points_r,
+    points_m: clampPoints(progress.points_m + option.points_m),
+    points_r: clampPoints(progress.points_r + option.points_r),
   };
   if (option.next_decision_id != null) {
     next.decisionId = option.next_decision_id;
