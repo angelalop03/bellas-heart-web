@@ -11,8 +11,8 @@ import {
 } from '../lib/states';
 
 /**
- * Cómo está Bella y cómo está la relación. Más relleno = peor
- * (en el juego original, los puntos suman malestar y tensión).
+ * Malestar de Bella y tensión con David. Más relleno = más malestar o más choque.
+ * La tensión sube también cuando Bella pone límites: no es «peor» en sí misma.
  * El relleno va de lavanda a frambuesa y las marcas indican dónde cambia el estado.
  */
 export function StateMeters({ pointsM, pointsR, compact }: { pointsM: number; pointsR: number; compact?: boolean }) {
@@ -20,7 +20,13 @@ export function StateMeters({ pointsM, pointsR, compact }: { pointsM: number; po
   const rel = RELATION_INFO[relationState(pointsR)];
   const items = [
     { key: 'm', icon: <Brain size={compact ? 14 : 17} />, title: 'Bella', info: psych, value: meterPercent(pointsM, PSYCH_THRESHOLDS) },
-    { key: 'r', icon: <HeartCrack size={compact ? 14 : 17} />, title: 'Relación', info: rel, value: meterPercent(pointsR, RELATION_THRESHOLDS) },
+    {
+      key: 'r',
+      icon: <HeartCrack size={compact ? 14 : 17} />,
+      title: compact ? 'Tensión' : 'Tensión con David',
+      info: rel,
+      value: meterPercent(pointsR, RELATION_THRESHOLDS),
+    },
   ];
   return (
     <div className={`meters ${compact ? 'meters-compact' : ''}`}>

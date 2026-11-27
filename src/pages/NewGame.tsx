@@ -77,7 +77,7 @@ export function StoryDetail() {
         <div className="stack">
           <p>{story.description}</p>
           <p className="faint">
-            <BookOpen size={15} style={{ verticalAlign: '-3px' }} /> Introducción y capítulos con distintos caminos según cómo evolucione la relación.
+            <BookOpen size={15} style={{ verticalAlign: '-3px' }} /> Introducción y capítulos con distintos caminos según tus decisiones.
           </p>
         </div>
         <form className="form" onSubmit={submit}>

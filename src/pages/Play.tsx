@@ -427,7 +427,7 @@ function EndCard({ game }: { game: Game }) {
         <Trophy size={40} color="var(--warn)" style={{ margin: '0 auto' }} />
         <h2 className="title-lg" style={{ textAlign: 'center' }}>Fin de la historia</h2>
         <p className="muted" style={{ textAlign: 'center' }}>
-          Bella termina <strong style={{ color: psych.color }}>{psych.label.toLowerCase()}</strong> y la relación en estado{' '}
+          Bella termina <strong style={{ color: psych.color }}>{psych.label.toLowerCase()}</strong>. Tensión con David:{' '}
           <strong style={{ color: rel.color }}>{rel.label.toLowerCase()}</strong>. Cada decisión cuenta: en la vida real, reconocer
           las señales a tiempo también.
         </p>

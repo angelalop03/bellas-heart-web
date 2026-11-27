@@ -22,10 +22,16 @@ El objetivo es **ayudar a reconocer las señales de una relación tóxica** (con
 
 ### Cómo se juega
 
-- **Cada decisión cuenta.** Las opciones suman malestar a Bella y tensión a la relación. Dos indicadores muestran en todo momento cómo está ella (*Estable → Algo inquieta → Ansiosa → Angustiada*) y cómo está la relación (*Confianza → Tensión leve → Tensión alta → Crítica*). Cuanto más rosa intenso, peor.
+- **Cada decisión cuenta.** Dos indicadores muestran en todo momento cómo está Bella (*Estable → Algo inquieta → Ansiosa → Angustiada*) y la tensión con David (*Calma aparente → Tensión leve → Tensión alta → Muy alta*).
+  - Ceder, justificarle, culparse o aislarse **aumenta el malestar** de Bella.
+  - Pedir ayuda, mantener a sus amistades, cuidarse o reconocer una señal de alarma **lo reduce**.
+  - Poner límites o enfrentarse a David **sube la tensión**: la calma no siempre es buena señal.
 - **Algunas respuestas solo aparecen** según el estado emocional de Bella, igual que en la vida real no siempre tenemos fuerzas para contestar de la misma manera.
-- **La historia se ramifica.** Tras la introducción y los capítulos 1 a 5, el estado de la relación decide qué versión de los capítulos 6, 7, 8 y del final vivirás. Hay cuatro caminos distintos.
-- **Al terminar**, el historial te muestra qué decisiones aumentaron el malestar o la tensión, para reflexionar sobre ellas.
+- **La historia se ramifica.** Tras la introducción y los capítulos 1 a 5, tus decisiones eligen qué versión de los capítulos 6, 7 y 8 vivirás. Hay cuatro caminos:
+  - Si Bella se protege y planta cara, la tensión crece y ella acaba tomando distancia.
+  - Si cede para evitar conflictos, todo parece tranquilo mientras el control de David se va cerrando sobre ella.
+- **El final depende del malestar de Bella.** Va desde salir de la relación con apoyo hasta el desenlace más grave, con dos finales intermedios.
+- **Al terminar**, el historial te muestra qué decisiones aumentaron o redujeron el malestar y la tensión, para reflexionar sobre ellas.
 
 ## Capturas
 
@@ -81,7 +87,7 @@ flowchart LR
 
 - **Frontend:** [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vite.dev/), con [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) para el manifest y el *service worker*. La historia completa se descarga en una sola petición y se guarda en el dispositivo, así pasar de un diálogo a otro es instantáneo.
 - **Servidor:** una función de [Vercel](https://vercel.com/) (`api/index.ts`, código en `server/`). Contraseñas con bcrypt, sesión en cookie `HttpOnly` firmada, protección CSRF, límite de intentos de inicio de sesión y control de acceso: cada jugadora solo ve y modifica sus propios datos.
-- **Base de datos:** [Neon](https://neon.tech/) (PostgreSQL). La lógica de la partida (sumar puntos, avanzar escena, desbloquear el capítulo según la relación…) vive en funciones SQL, así el progreso siempre es coherente aunque se juegue desde varios dispositivos.
+- **Base de datos:** [Neon](https://neon.tech/) (PostgreSQL). La lógica de la partida (sumar puntos, avanzar escena, elegir la rama del capítulo siguiente…) vive en funciones SQL, así el progreso siempre es coherente aunque se juegue desde varios dispositivos.
 - **Ilustraciones:** las originales del juego convertidas a WebP, de ~100 MB a ~4,5 MB sin pérdida visible.
 
 ```

@@ -17,7 +17,7 @@ export function HistoryList() {
       <Backdrop src={BACKDROPS.history} />
       <PageHead title="Historial" />
       <p className="muted">
-        Revisa las decisiones de cada partida y cuáles hicieron crecer el malestar de Bella o la tensión en la relación.
+        Revisa las decisiones de cada partida y cuáles hicieron crecer el malestar de Bella o la tensión con David.
       </p>
       {loading && <Spinner />}
       {error && <div className="alert alert-error">{error}</div>}

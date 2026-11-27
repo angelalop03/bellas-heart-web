@@ -42,11 +42,15 @@ export const PSYCH_INFO: Record<PsychState, StateInfo> = {
   DISTRESSED: { label: 'Angustiada', short: 'Angustiada', color: LEVEL_COLORS[3], level: 3 },
 };
 
+/**
+ * Tensión con David: cuánto choca Bella con él. Sube cuando ella pone límites o se protege,
+ * así que no mide lo «sana» que es la relación (eso lo dice el malestar de Bella).
+ */
 export const RELATION_INFO: Record<RelationState, StateInfo> = {
-  CONFIDENT: { label: 'Confianza', short: 'Confianza', color: LEVEL_COLORS[0], level: 0 },
-  LOW_TENSION: { label: 'Tensión leve', short: 'Tensión leve', color: LEVEL_COLORS[1], level: 1 },
-  HIGH_TENSION: { label: 'Tensión alta', short: 'Tensión alta', color: LEVEL_COLORS[2], level: 2 },
-  CRITICAL: { label: 'Crítica', short: 'Crítica', color: LEVEL_COLORS[3], level: 3 },
+  CONFIDENT: { label: 'Calma aparente', short: 'Calma', color: LEVEL_COLORS[0], level: 0 },
+  LOW_TENSION: { label: 'Tensión leve', short: 'Leve', color: LEVEL_COLORS[1], level: 1 },
+  HIGH_TENSION: { label: 'Tensión alta', short: 'Alta', color: LEVEL_COLORS[2], level: 2 },
+  CRITICAL: { label: 'Muy alta', short: 'Muy alta', color: LEVEL_COLORS[3], level: 3 },
 };
 
 /** En la barra, cada estado ocupa una cuarta parte: las marcas quedan al 25 %, 50 % y 75 %. */
