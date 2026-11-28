@@ -48,8 +48,8 @@ export function indexStory(raw: StoryData): Story {
 }
 
 const memory = new Map<string, Promise<Story>>();
-// v3: ramas de los capítulos 6-9 reordenadas (migración 004)
-const CACHE_PREFIX = 'bh-story-v3:';
+// v4: puntos de los primeros capítulos (migración 006)
+const CACHE_PREFIX = 'bh-story-v4:';
 
 /**
  * Descarga la historia completa (capítulos, escenas, diálogos y opciones) en una sola llamada.
