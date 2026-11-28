@@ -30,7 +30,6 @@ El objetivo es **ayudar a reconocer las señales de una relación tóxica** (con
 - **La historia se ramifica.** Tras la introducción y los capítulos 1 a 5, tus decisiones eligen qué versión de los capítulos 6, 7 y 8 vivirás. Hay cuatro caminos:
   - Si Bella se protege y planta cara, la tensión crece y ella acaba tomando distancia.
   - Si cede para evitar conflictos, todo parece tranquilo mientras el control de David se va cerrando sobre ella.
-- **El final depende del malestar de Bella.** Si reconoce las señales, pide ayuda y se cuida, logra salir de la relación con apoyo; con algo de inquietud, se va tras una última discusión. Si el malestar llega a ansiedad o angustia, la historia termina en el desenlace más grave, como tantas noticias reales.
 - **Al terminar**, el historial te muestra qué decisiones aumentaron o redujeron el malestar y la tensión, para reflexionar sobre ellas.
 
 ## Capturas
